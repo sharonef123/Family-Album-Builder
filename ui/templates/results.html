@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>תוצאות חיפוש - אלבום משפחה</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>תוצאות חיפוש</h1>
+            <a href="/" class="btn btn-secondary">← חזרה לעמוד הבית</a>
+        </header>
+
+        <div class="content">
+            <section class="results-section card">
+                <div class="results-toolbar">
+                    <label>
+                        <input type="checkbox" id="select-all" onchange="selectAll(this)">
+                        בחר הכל
+                    </label>
+                    <span id="selected-count">בחרו: 0</span>
+                    <button class="btn btn-success" onclick="goToEditor()" id="create-album-btn" disabled>
+                        ✓ צור אלבום מהנבחרות
+                    </button>
+                </div>
+
+                <div id="photos-grid" class="photos-grid">
+                    <!-- Photos will be loaded here -->
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        let allPhotos = [];
+        let selectedPhotos = [];
+
+        function loadResults() {
+            const results = localStorage.getItem('searchResults');
+            if (!results) {
+                document.getElementById('photos-grid').innerHTML = '<p>לא נמצאו תוצאות</p>';
+                return;
+            }
+
+            allPhotos = JSON.parse(results);
+            renderPhotos();
+        }
+
+        function renderPhotos() {
+            const grid = document.getElementById('photos-grid');
+            grid.innerHTML = '';
+
+            allPhotos.forEach((photo, index) => {
+                const photoCard = document.createElement('div');
+                photoCard.className = 'photo-card';
+                photoCard.innerHTML = `
+                    <div class="photo-checkbox">
+                        <input type="checkbox" data-index="${index}" onchange="updateSelection()">
+                    </div>
+                    <img src="${photo.base_url}=w400-h400" alt="${photo.filename}" class="photo-thumbnail">
+                    <div class="photo-info">
+                        <p class="photo-name">${photo.filename}</p>
+                        <p class="photo-date">${photo.creation_time?.slice(0, 10) || 'N/A'}</p>
+                    </div>
+                `;
+                grid.appendChild(photoCard);
+            });
+        }
+
+        function selectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.photo-card input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+            updateSelection();
+        }
+
+        function updateSelection() {
+            const checkboxes = document.querySelectorAll('.photo-card input[type="checkbox"]:checked');
+            selectedPhotos = Array.from(checkboxes).map(cb => {
+                const index = parseInt(cb.getAttribute('data-index'));
+                return allPhotos[index];
+            });
+
+            document.getElementById('selected-count').textContent = `בחרו: ${selectedPhotos.length}`;
+            document.getElementById('create-album-btn').disabled = selectedPhotos.length === 0;
+            document.getElementById('select-all').checked = selectedPhotos.length === allPhotos.length;
+        }
+
+        function goToEditor() {
+            if (selectedPhotos.length === 0) {
+                alert('בחר לפחות תמונה אחת');
+                return;
+            }
+
+            localStorage.setItem('selectedPhotos', JSON.stringify(selectedPhotos));
+            window.location.href = '/album-editor';
+        }
+
+        // Load results on page load
+        document.addEventListener('DOMContentLoaded', loadResults);
+    </script>
+</body>
+</html>

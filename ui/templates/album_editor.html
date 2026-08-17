@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>עריכת אלבום - אלבום משפחה</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>עריכת אלבום</h1>
+            <a href="/results" class="btn btn-secondary">← חזרה לתוצאות</a>
+        </header>
+
+        <div class="content">
+            <!-- Album Settings -->
+            <section class="settings-section card">
+                <h2>הגדרות אלבום</h2>
+
+                <div class="settings-grid">
+                    <div>
+                        <label>כותרת האלבום:</label>
+                        <input type="text" id="album-title" placeholder="לדוגמה: טיול בחו״ל 2024" class="input-field" value="אלבום משפחה">
+                    </div>
+
+                    <div>
+                        <label>פרסום:</label>
+                        <select id="layout" class="input-field">
+                            <option value="1x1">1x1 (תמונה בדף)</option>
+                            <option value="2x1">2x1</option>
+                            <option value="1x2">1x2</option>
+                            <option value="2x2" selected>2x2 (מומלץ)</option>
+                            <option value="3x2">3x2</option>
+                            <option value="3x3">3x3</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Photo Ordering -->
+            <section class="photos-section card">
+                <h2>סדור תמונות (גרור להעברה)</h2>
+                <div id="photos-reorder-list" class="photos-reorder-list">
+                    <!-- Photos will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Preview -->
+            <section class="preview-section card">
+                <h2>תצוגה מקדימה</h2>
+                <div id="preview" class="preview-grid">
+                    <!-- Preview will be shown here -->
+                </div>
+            </section>
+
+            <!-- Export -->
+            <section class="export-section card">
+                <h2>ייצוא</h2>
+                <button class="btn btn-primary btn-large" onclick="generatePDF()">
+                    📄 ייצא ל-PDF
+                </button>
+                <p id="export-status"></p>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        let selectedPhotos = [];
+        let draggedItem = null;
+
+        function loadPhotos() {
+            const photos = localStorage.getItem('selectedPhotos');
+            if (!photos) {
+                document.getElementById('photos-reorder-list').innerHTML = '<p>לא נבחרו תמונות</p>';
+                return;
+            }
+
+            selectedPhotos = JSON.parse(photos);
+            renderPhotosForReordering();
+            updatePreview();
+        }
+
+        function renderPhotosForReordering() {
+            const list = document.getElementById('photos-reorder-list');
+            list.innerHTML = '';
+
+            selectedPhotos.forEach((photo, index) => {
+                const item = document.createElement('div');
+                item.className = 'photo-reorder-item';
+                item.draggable = true;
+                item.dataset.index = index;
+
+                item.innerHTML = `
+                    <div class="drag-handle">≡</div>
+                    <img src="${photo.base_url}=w100-h100" alt="${photo.filename}">
+                    <div class="photo-details">
+                        <p class="photo-name">${photo.filename}</p>
+                        <p class="photo-date">${photo.creation_time?.slice(0, 10) || 'N/A'}</p>
+                    </div>
+                    <button class="btn-remove" onclick="removePhoto(${index})">✕</button>
+                `;
+
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('drop', handleDrop);
+                item.addEventListener('dragend', handleDragEnd);
+
+                list.appendChild(item);
+            });
+        }
+
+        function handleDragStart(e) {
+            draggedItem = this;
+            this.style.opacity = '0.5';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+
+            if (draggedItem === this) return;
+
+            const draggedIndex = parseInt(draggedItem.dataset.index);
+            const targetIndex = parseInt(this.dataset.index);
+
+            const temp = selectedPhotos[draggedIndex];
+            selectedPhotos[draggedIndex] = selectedPhotos[targetIndex];
+            selectedPhotos[targetIndex] = temp;
+
+            renderPhotosForReordering();
+            updatePreview();
+        }
+
+        function handleDragEnd() {
+            draggedItem.style.opacity = '1';
+            draggedItem = null;
+        }
+
+        function removePhoto(index) {
+            selectedPhotos.splice(index, 1);
+            renderPhotosForReordering();
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const preview = document.getElementById('preview');
+            const layout = document.getElementById('layout').value;
+            const layoutParts = layout.split('x').map(Number);
+            const cols = layoutParts[0];
+
+            preview.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            preview.innerHTML = '';
+
+            selectedPhotos.slice(0, 6).forEach((photo) => {
+                const img = document.createElement('img');
+                img.src = `${photo.base_url}=w300-h300`;
+                img.alt = photo.filename;
+                img.className = 'preview-img';
+                preview.appendChild(img);
+            });
+        }
+
+        function generatePDF() {
+            const title = document.getElementById('album-title').value;
+            const layout = document.getElementById('layout').value;
+            const statusEl = document.getElementById('export-status');
+
+            statusEl.textContent = 'מייצא...';
+
+            fetch('/api/generate-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    photos: selectedPhotos,
+                    title: title,
+                    layout: layout
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        statusEl.textContent = '✓ ההורדה תחל בעוד שניה...';
+                        setTimeout(() => {
+                            window.location.href = `/download/${data.filename}`;
+                        }, 1000);
+                    } else {
+                        statusEl.textContent = 'שגיאה: ' + data.error;
+                    }
+                })
+                .catch(error => {
+                    statusEl.textContent = 'שגיאה: ' + error;
+                });
+        }
+
+        // Update preview when layout changes
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPhotos();
+            document.getElementById('layout').addEventListener('change', updatePreview);
+        });
+    </script>
+</body>
+</html>
