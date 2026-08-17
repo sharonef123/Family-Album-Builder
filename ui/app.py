@@ -1,11 +1,14 @@
 import os
 import json
+import logging
 from flask import Flask, render_template, request, jsonify, send_file
 from photos_api import sync_all_media, search_by_people, search_by_date_range, get_sync_status, download_photo
 from album_generator import generate_album_pdf
 import threading
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
+logging.basicConfig(level=logging.INFO)
+logger = app.logger
 
 # People list for selection
 PEOPLE = [
@@ -27,16 +30,21 @@ def index():
 @app.route('/api/sync', methods=['POST'])
 def api_sync():
     """Start media sync in background."""
+    logger.info("🔄 Sync request received")
+
     def do_sync():
         sync_progress['status'] = 'syncing'
         sync_progress['count'] = 0
+        logger.info("Starting media sync...")
 
         def progress_callback(count):
             sync_progress['count'] = count
+            logger.info(f"✓ Synced {count} items...")
 
         total = sync_all_media(progress_callback)
         sync_progress['status'] = 'complete'
         sync_progress['count'] = total
+        logger.info(f"✅ Sync complete! Total: {total} photos")
 
     thread = threading.Thread(target=do_sync)
     thread.daemon = True
