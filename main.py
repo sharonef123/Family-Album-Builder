@@ -8,20 +8,23 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ui.app import app
 
 if __name__ == "__main__":
+    port = int(os.environ.get('PORT', 5050))
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    host = '0.0.0.0' if os.environ.get('FLASK_ENV') == 'production' else '127.0.0.1'
+
     print("=" * 60)
     print("Family Album Builder")
     print("=" * 60)
-    print("\n1. Google OAuth2 Authentication...")
-    print("2. Starting Flask server on port 5050...")
-    print("3. Opening browser...")
-    print("\nServer running at: http://localhost:5050")
-    print("Press Ctrl+C to stop\n")
+    print(f"\nServer running at port {port}")
+    print(f"Debug mode: {debug}")
+    print(f"Environment: {os.environ.get('FLASK_ENV', 'development')}\n")
 
-    webbrowser.open("http://localhost:5050")
+    if port == 5050:
+        webbrowser.open("http://localhost:5050")
 
     app.run(
-        host='127.0.0.1',
-        port=5050,
-        debug=False,
+        host=host,
+        port=port,
+        debug=debug,
         use_reloader=False
     )
