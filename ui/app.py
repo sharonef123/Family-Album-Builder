@@ -6,6 +6,10 @@ from photos_api import sync_all_media, search_by_people, search_by_date_range, g
 from album_generator import generate_album_pdf
 import threading
 
+print("="*60, file=sys.stderr, flush=True)
+print("STARTING FLASK APP", file=sys.stderr, flush=True)
+print("="*60, file=sys.stderr, flush=True)
+
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
 # People list for selection
