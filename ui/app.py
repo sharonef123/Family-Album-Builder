@@ -31,22 +31,33 @@ def api_sync():
     print("🔄 Sync request received", file=sys.stderr, flush=True)
 
     def do_sync():
-        sync_progress['status'] = 'syncing'
-        sync_progress['count'] = 0
-        print("Starting media sync...", file=sys.stderr, flush=True)
+        try:
+            print("🔵 Thread started!", file=sys.stderr, flush=True)
+            sync_progress['status'] = 'syncing'
+            sync_progress['count'] = 0
+            print("Starting media sync...", file=sys.stderr, flush=True)
 
-        def progress_callback(count):
-            sync_progress['count'] = count
-            print(f"✓ Synced {count} items...", file=sys.stderr, flush=True)
+            def progress_callback(count):
+                sync_progress['count'] = count
+                print(f"✓ Synced {count} items...", file=sys.stderr, flush=True)
 
-        total = sync_all_media(progress_callback)
-        sync_progress['status'] = 'complete'
-        sync_progress['count'] = total
-        print(f"✅ Sync complete! Total: {total} photos", file=sys.stderr, flush=True)
+            print("Calling sync_all_media...", file=sys.stderr, flush=True)
+            total = sync_all_media(progress_callback)
+            sync_progress['status'] = 'complete'
+            sync_progress['count'] = total
+            print(f"✅ Sync complete! Total: {total} photos", file=sys.stderr, flush=True)
+        except Exception as e:
+            print(f"❌ Sync error in thread: {e}", file=sys.stderr, flush=True)
+            import traceback
+            traceback.print_exc(file=sys.stderr)
+            sync_progress['status'] = 'error'
 
+    print("Creating thread...", file=sys.stderr, flush=True)
     thread = threading.Thread(target=do_sync)
     thread.daemon = True
+    print("Starting thread...", file=sys.stderr, flush=True)
     thread.start()
+    print("Thread started", file=sys.stderr, flush=True)
 
     return jsonify({'status': 'started'})
 
