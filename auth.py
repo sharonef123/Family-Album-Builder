@@ -28,6 +28,7 @@ TOKEN_FILE = r"C:\AppsProjects\MyApps\album-builder\token.pickle"
 
 def get_authenticated_service():
     """Authenticate with Google Photos API and return the service object."""
+    import sys
     creds = None
 
     if os.path.exists(TOKEN_FILE):
@@ -42,10 +43,17 @@ def get_authenticated_service():
                 creds = None
 
         if not creds:
-            client_secret = get_client_secret_file()
-            flow = InstalledAppFlow.from_client_secrets_file(
-                client_secret, SCOPES)
-            creds = flow.run_local_server(port=0)
+            print("⚠️ No valid credentials found. Attempting OAuth...", file=sys.stderr, flush=True)
+            try:
+                client_secret = get_client_secret_file()
+                print(f"Using client secret: {client_secret}", file=sys.stderr, flush=True)
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    client_secret, SCOPES)
+                creds = flow.run_local_server(port=0)
+                print("✅ OAuth successful!", file=sys.stderr, flush=True)
+            except Exception as e:
+                print(f"❌ OAuth failed: {e}", file=sys.stderr, flush=True)
+                raise
 
         with open(TOKEN_FILE, 'wb') as token:
             pickle.dump(creds, token)
