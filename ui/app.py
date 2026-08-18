@@ -47,10 +47,12 @@ def api_sync():
             sync_progress['count'] = total
             print(f"✅ Sync complete! Total: {total} photos", file=sys.stderr, flush=True)
         except Exception as e:
-            print(f"❌ Sync error in thread: {e}", file=sys.stderr, flush=True)
+            print(f"❌ SYNC ERROR IN THREAD: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
             import traceback
+            print("TRACEBACK:", file=sys.stderr, flush=True)
             traceback.print_exc(file=sys.stderr)
             sync_progress['status'] = 'error'
+            print(f"Sync progress set to: {sync_progress}", file=sys.stderr, flush=True)
 
     print("Creating thread...", file=sys.stderr, flush=True)
     thread = threading.Thread(target=do_sync)
