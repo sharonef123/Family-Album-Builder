@@ -22,7 +22,7 @@ def get_client_secret_file():
 
         return temp_file.name
     else:
-        return r"C:\AppsProjects\MyApps\album-builder\client_secret_2_415896127616-euoecu375g31a6ibs5pnherqc43bfron.apps.googleusercontent.com.json"
+        return r"C:\AppsProjects\MyApps\album-builder\client_secret_415896127616-nffpfqa7bhid4vrp982262bppro2metm.apps.googleusercontent.com.json"
 
 TOKEN_FILE = r"C:\AppsProjects\MyApps\album-builder\token.pickle"
 
