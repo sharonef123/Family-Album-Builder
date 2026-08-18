@@ -51,7 +51,7 @@ def sync_all_media(progress_callback=None):
     total_synced = 0
     error_count = 0
 
-    logger.info("🔄 Starting media sync from Google Photos...")
+    print("🔄 Starting media sync from Google Photos...", flush=True)
 
     try:
         while True:
@@ -60,13 +60,13 @@ def sync_all_media(progress_callback=None):
                 if page_token:
                     request_body['pageToken'] = page_token
 
-                logger.info(f"  Fetching batch {total_synced // 100 + 1}...")
+                print(f"  Fetching batch {total_synced // 100 + 1}...", flush=True)
                 response = service.mediaItems().list(**request_body).execute()
 
                 media_items = response.get('mediaItems', [])
 
                 if not media_items:
-                    logger.info(f"  No more items returned")
+                    print(f"  No more items returned", flush=True)
                     break
 
                 for item in media_items:
@@ -90,11 +90,11 @@ def sync_all_media(progress_callback=None):
                             conn.commit()
                             if progress_callback:
                                 progress_callback(total_synced)
-                            logger.info(f"  ✓ Synced {total_synced} items...")
+                            print(f"  ✓ Synced {total_synced} items...", flush=True)
 
                     except Exception as item_error:
                         error_count += 1
-                        logger.warning(f"  ⚠ Error processing item: {item_error}")
+                        print(f"  ⚠ Error processing item: {item_error}", flush=True)
                         continue
 
                 conn.commit()
@@ -104,16 +104,16 @@ def sync_all_media(progress_callback=None):
 
                 page_token = response.get('nextPageToken')
                 if not page_token:
-                    logger.info(f"✅ Sync complete! Total: {total_synced} photos")
+                    print(f"✅ Sync complete! Total: {total_synced} photos", flush=True)
                     if error_count > 0:
-                        logger.warning(f"⚠ {error_count} items had errors")
+                        print(f"⚠ {error_count} items had errors", flush=True)
                     break
 
             except Exception as e:
-                logger.error(f"❌ Error during sync: {e}")
+                print(f"❌ Error during sync: {e}", flush=True)
                 error_count += 1
                 if error_count > 5:
-                    logger.error("Too many errors, stopping sync")
+                    print("Too many errors, stopping sync", flush=True)
                     break
                 continue
 

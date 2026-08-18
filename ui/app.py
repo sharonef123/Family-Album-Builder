@@ -36,38 +36,38 @@ def index():
 @app.route('/api/sync', methods=['POST'])
 def api_sync():
     """Start media sync in background."""
-    logger.info("🔄 Sync request received")
+    print("🔄 Sync request received", flush=True)
 
     def do_sync():
         try:
-            logger.info("🔵 Thread started!")
+            print("🔵 Thread started!", flush=True)
             sync_progress['status'] = 'syncing'
             sync_progress['count'] = 0
-            logger.info("Starting media sync...")
+            print("Starting media sync...", flush=True)
 
             def progress_callback(count):
                 sync_progress['count'] = count
-                logger.info(f"✓ Synced {count} items...")
+                print(f"✓ Synced {count} items...", flush=True)
 
-            logger.info("Calling sync_all_media...")
+            print("Calling sync_all_media...", flush=True)
             total = sync_all_media(progress_callback)
             sync_progress['status'] = 'complete'
             sync_progress['count'] = total
-            logger.info(f"✅ Sync complete! Total: {total} photos")
+            print(f"✅ Sync complete! Total: {total} photos", flush=True)
         except Exception as e:
-            logger.error(f"❌ SYNC ERROR IN THREAD: {type(e).__name__}: {e}")
+            print(f"❌ SYNC ERROR IN THREAD: {type(e).__name__}: {e}", flush=True)
             import traceback
-            logger.error("TRACEBACK:")
-            logger.error(traceback.format_exc())
+            print("TRACEBACK:", flush=True)
+            print(traceback.format_exc(), flush=True)
             sync_progress['status'] = 'error'
-            logger.error(f"Sync progress set to: {sync_progress}")
+            print(f"Sync progress set to: {sync_progress}", flush=True)
 
-    logger.info("Creating thread...")
+    print("Creating thread...", flush=True)
     thread = threading.Thread(target=do_sync)
-    thread.daemon = True
-    logger.info("Starting thread...")
+    thread.daemon = False
+    print("Starting thread...", flush=True)
     thread.start()
-    logger.info("Thread started")
+    print("Thread started", flush=True)
 
     return jsonify({'status': 'started'})
 
