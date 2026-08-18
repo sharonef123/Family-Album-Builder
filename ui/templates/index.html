@@ -111,12 +111,22 @@
         function startSync() {
             const btn = document.getElementById('sync-btn');
             btn.disabled = true;
+            console.log('Starting sync...');
 
             fetch('/api/sync', { method: 'POST' })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Sync response:', response.status);
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Sync data:', data);
                     document.getElementById('sync-progress').style.display = 'block';
                     pollSyncStatus();
+                })
+                .catch(error => {
+                    console.error('Sync error:', error);
+                    btn.disabled = false;
+                    alert('שגיאה בהתחלת סנכרון: ' + error.message);
                 });
         }
 
