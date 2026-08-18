@@ -6,11 +6,15 @@ from photos_api import sync_all_media, search_by_people, search_by_date_range, g
 from album_generator import generate_album_pdf
 import threading
 
-print("="*60, file=sys.stderr, flush=True)
-print("STARTING FLASK APP", file=sys.stderr, flush=True)
-print("="*60, file=sys.stderr, flush=True)
-
 app = Flask(__name__, template_folder='templates', static_folder='static')
+
+# Configure logging
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = app.logger
+logger.info("="*60)
+logger.info("STARTING FLASK APP")
+logger.info("="*60)
 
 # People list for selection
 PEOPLE = [
@@ -32,38 +36,38 @@ def index():
 @app.route('/api/sync', methods=['POST'])
 def api_sync():
     """Start media sync in background."""
-    print("🔄 Sync request received", file=sys.stderr, flush=True)
+    logger.info("🔄 Sync request received")
 
     def do_sync():
         try:
-            print("🔵 Thread started!", file=sys.stderr, flush=True)
+            logger.info("🔵 Thread started!")
             sync_progress['status'] = 'syncing'
             sync_progress['count'] = 0
-            print("Starting media sync...", file=sys.stderr, flush=True)
+            logger.info("Starting media sync...")
 
             def progress_callback(count):
                 sync_progress['count'] = count
-                print(f"✓ Synced {count} items...", file=sys.stderr, flush=True)
+                logger.info(f"✓ Synced {count} items...")
 
-            print("Calling sync_all_media...", file=sys.stderr, flush=True)
+            logger.info("Calling sync_all_media...")
             total = sync_all_media(progress_callback)
             sync_progress['status'] = 'complete'
             sync_progress['count'] = total
-            print(f"✅ Sync complete! Total: {total} photos", file=sys.stderr, flush=True)
+            logger.info(f"✅ Sync complete! Total: {total} photos")
         except Exception as e:
-            print(f"❌ SYNC ERROR IN THREAD: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+            logger.error(f"❌ SYNC ERROR IN THREAD: {type(e).__name__}: {e}")
             import traceback
-            print("TRACEBACK:", file=sys.stderr, flush=True)
-            traceback.print_exc(file=sys.stderr)
+            logger.error("TRACEBACK:")
+            logger.error(traceback.format_exc())
             sync_progress['status'] = 'error'
-            print(f"Sync progress set to: {sync_progress}", file=sys.stderr, flush=True)
+            logger.error(f"Sync progress set to: {sync_progress}")
 
-    print("Creating thread...", file=sys.stderr, flush=True)
+    logger.info("Creating thread...")
     thread = threading.Thread(target=do_sync)
     thread.daemon = True
-    print("Starting thread...", file=sys.stderr, flush=True)
+    logger.info("Starting thread...")
     thread.start()
-    print("Thread started", file=sys.stderr, flush=True)
+    logger.info("Thread started")
 
     return jsonify({'status': 'started'})
 

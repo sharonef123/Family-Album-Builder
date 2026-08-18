@@ -2,10 +2,13 @@ import os
 import sys
 import json
 import sqlite3
+import logging
 from datetime import datetime
 from typing import List, Dict
 import requests
 from auth import get_authenticated_service
+
+logger = logging.getLogger(__name__)
 
 CACHE_DIR = r"C:\AppsProjects\MyApps\album-builder\cache"
 DB_PATH = os.path.join(CACHE_DIR, "media_items.db")
@@ -48,7 +51,7 @@ def sync_all_media(progress_callback=None):
     total_synced = 0
     error_count = 0
 
-    print("🔄 Starting media sync from Google Photos...", file=sys.stderr, flush=True)
+    logger.info("🔄 Starting media sync from Google Photos...")
 
     try:
         while True:
@@ -57,13 +60,13 @@ def sync_all_media(progress_callback=None):
                 if page_token:
                     request_body['pageToken'] = page_token
 
-                print(f"  Fetching batch {total_synced // 100 + 1}...", file=sys.stderr, flush=True)
+                logger.info(f"  Fetching batch {total_synced // 100 + 1}...")
                 response = service.mediaItems().list(**request_body).execute()
 
                 media_items = response.get('mediaItems', [])
 
                 if not media_items:
-                    print(f"  No more items returned", file=sys.stderr, flush=True)
+                    logger.info(f"  No more items returned")
                     break
 
                 for item in media_items:
@@ -87,11 +90,11 @@ def sync_all_media(progress_callback=None):
                             conn.commit()
                             if progress_callback:
                                 progress_callback(total_synced)
-                            print(f"  ✓ Synced {total_synced} items...", file=sys.stderr, flush=True)
+                            logger.info(f"  ✓ Synced {total_synced} items...")
 
                     except Exception as item_error:
                         error_count += 1
-                        print(f"  ⚠ Error processing item: {item_error}", file=sys.stderr, flush=True)
+                        logger.warning(f"  ⚠ Error processing item: {item_error}")
                         continue
 
                 conn.commit()
@@ -101,16 +104,16 @@ def sync_all_media(progress_callback=None):
 
                 page_token = response.get('nextPageToken')
                 if not page_token:
-                    print(f"✅ Sync complete! Total: {total_synced} photos", file=sys.stderr, flush=True)
+                    logger.info(f"✅ Sync complete! Total: {total_synced} photos")
                     if error_count > 0:
-                        print(f"⚠ {error_count} items had errors", file=sys.stderr, flush=True)
+                        logger.warning(f"⚠ {error_count} items had errors")
                     break
 
             except Exception as e:
-                print(f"❌ Error during sync: {e}", file=sys.stderr, flush=True)
+                logger.error(f"❌ Error during sync: {e}")
                 error_count += 1
                 if error_count > 5:
-                    print("Too many errors, stopping sync", file=sys.stderr, flush=True)
+                    logger.error("Too many errors, stopping sync")
                     break
                 continue
 
