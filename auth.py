@@ -33,14 +33,27 @@ def get_authenticated_service():
     print("🔐 get_authenticated_service() called", flush=True)
     creds = None
 
-    print(f"Checking for token file: {TOKEN_FILE}", flush=True)
-    if os.path.exists(TOKEN_FILE):
-        print("✓ Token file exists, loading...", flush=True)
-        with open(TOKEN_FILE, 'rb') as token:
-            creds = pickle.load(token)
-        print("✓ Token loaded", flush=True)
-    else:
-        print("✗ Token file not found", flush=True)
+    # Check if token is in environment variable (production)
+    if 'GOOGLE_OAUTH_TOKEN' in os.environ:
+        print("✓ Loading token from GOOGLE_OAUTH_TOKEN env var", flush=True)
+        try:
+            token_data = base64.b64decode(os.environ['GOOGLE_OAUTH_TOKEN'])
+            creds = pickle.loads(token_data)
+            print("✓ Token loaded from env", flush=True)
+        except Exception as e:
+            print(f"✗ Failed to load token from env: {e}", flush=True)
+            creds = None
+
+    # Otherwise check for local token file
+    if not creds:
+        print(f"Checking for token file: {TOKEN_FILE}", flush=True)
+        if os.path.exists(TOKEN_FILE):
+            print("✓ Token file exists, loading...", flush=True)
+            with open(TOKEN_FILE, 'rb') as token:
+                creds = pickle.load(token)
+            print("✓ Token loaded", flush=True)
+        else:
+            print("✗ Token file not found", flush=True)
 
     if not creds or not creds.valid:
         print("Credentials invalid or missing, need OAuth", flush=True)
@@ -61,7 +74,8 @@ def get_authenticated_service():
                 flow = InstalledAppFlow.from_client_secrets_file(
                     client_secret, SCOPES)
                 print("Running local server for OAuth...", flush=True)
-                creds = flow.run_local_server(port=0)
+                # Use open_browser=False to avoid browser error in containerized environments
+                creds = flow.run_local_server(port=0, open_browser=False)
                 print("✅ OAuth successful!", flush=True)
             except Exception as e:
                 print(f"❌ OAuth failed: {type(e).__name__}: {e}", flush=True)
