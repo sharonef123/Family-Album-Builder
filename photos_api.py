@@ -10,7 +10,7 @@ from auth import get_authenticated_service
 
 logger = logging.getLogger(__name__)
 
-CACHE_DIR = r"C:\AppsProjects\MyApps\album-builder\cache"
+CACHE_DIR = os.path.join(os.path.expanduser("~"), ".album-builder", "cache")
 DB_PATH = os.path.join(CACHE_DIR, "media_items.db")
 
 def init_cache():

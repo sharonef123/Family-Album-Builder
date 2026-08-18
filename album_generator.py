@@ -13,7 +13,7 @@ from arabic_reshaper import reshape
 from bidi.algorithm import get_display
 import tempfile
 
-OUTPUT_DIR = r"C:\AppsProjects\MyApps\album-builder\output"
+OUTPUT_DIR = os.path.join(os.path.expanduser("~"), ".album-builder", "output")
 
 LAYOUT_CONFIGS = {
     '1x1': (1, 1),

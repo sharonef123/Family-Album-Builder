@@ -144,7 +144,8 @@ def api_generate_pdf():
 @app.route('/download/<filename>', methods=['GET'])
 def download_pdf(filename):
     """Download generated PDF."""
-    output_dir = r"C:\AppsProjects\MyApps\album-builder\output"
+    output_dir = os.path.join(os.path.expanduser("~"), ".album-builder", "output")
+    os.makedirs(output_dir, exist_ok=True)
     file_path = os.path.join(output_dir, filename)
 
     if os.path.exists(file_path):
@@ -159,7 +160,9 @@ def api_download_photo():
 
     try:
         base_url = data.get('base_url')
-        temp_path = r"C:\AppsProjects\MyApps\album-builder\cache\temp.jpg"
+        temp_dir = os.path.join(os.path.expanduser("~"), ".album-builder", "cache")
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_path = os.path.join(temp_dir, "temp.jpg")
 
         if download_photo(base_url, temp_path):
             return send_file(temp_path, mimetype='image/jpeg')
@@ -169,4 +172,6 @@ def api_download_photo():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5050, debug=True)
+    port = int(os.environ.get('PORT', 5050))
+    debug = os.environ.get('FLASK_ENV', 'development') == 'development'
+    app.run(host='0.0.0.0', port=port, debug=debug, use_reloader=False)

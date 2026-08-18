@@ -24,7 +24,9 @@ def get_client_secret_file():
     else:
         return r"C:\AppsProjects\MyApps\album-builder\client_secret_415896127616-nffpfqa7bhid4vrp982262bppro2metm.apps.googleusercontent.com.json"
 
-TOKEN_FILE = r"C:\AppsProjects\MyApps\album-builder\token.pickle"
+TOKEN_FILE = os.path.join(os.path.expanduser("~"), ".album-builder", "token.pickle")
+
+os.makedirs(os.path.dirname(TOKEN_FILE), exist_ok=True)
 
 def get_authenticated_service():
     """Authenticate with Google Photos API and return the service object."""

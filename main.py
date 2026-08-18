@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 import os
-import webbrowser
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -18,9 +17,10 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"\nServer running at port {port}")
     print(f"Debug mode: {debug}")
-    print(f"Environment: {flask_env}\n")
+    print(f"Environment: {flask_env}\n", flush=True)
 
-    if port == 5050:
+    if debug:
+        import webbrowser
         webbrowser.open("http://localhost:5050")
 
     app.run(
